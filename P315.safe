@@ -1,0 +1,92 @@
+#!/usr/bin/python
+
+import sys
+import datetime
+
+class map:
+  map = {}
+  map[0] = 0b0111111
+  map[1] = 0b0000110
+  map[2] = 0b1011011
+  map[3] = 0b1001111
+  map[4] = 0b0110110
+  map[5] = 0b1101101
+  map[6] = 0b1111011
+  map[7] = 0b0001111
+  map[8] = 0b1111111
+  map[9] = 0b1101111
+  map['blank'] = 0b0000000
+
+def calculateDigitalRoots(aNumber):
+  roots = [int(aNumber)]
+  aNumber = int(aNumber)
+  while len(str(roots[-1])) > 1:
+    roots.append(sum(int(i) for i in str(roots[-1])))
+  return roots
+
+def calculateTransitionCost(aNumber):
+  #first get the roots
+  roots = calculateDigitalRoots(aNumber)
+  print roots
+  #make sure that roots is 2 or greater!
+  if len(roots) > 1:
+    Sam = calculateSimpleCost(roots[0])
+    Sam = Sam + calculateSimpleCost(roots[-1])
+    Max = Sam
+    # so now we've taken care of the first appearance and last disappaearance
+    for i in range(0, len(roots)-1):
+      pre, lenPre = str(roots[i]), len(str(roots[i]))
+      post, lenPost = str(roots[i+1]), len(str(roots[i+1]))
+      while lenPre > lenPost:
+        Max = Max + calculateSimpleCost(int(pre[0]))
+        pre = pre[1:]
+        lenPre = lenPre-1
+      for pair in zip(pre, post):
+        Max = Max + calculateComplexCost(pair[0], pair[1])
+    # ok, now done with Max.
+    roots = roots[1:-1]
+    for root in roots:
+      Sam = Sam + calculateSimpleCost(root)
+    Sam = Sam * 2
+    return Sam, Max
+
+
+def calculateSimpleCost(N):
+  # i.e. the cost to turn on or off a number
+  return sum(bin(map.map[int(i)]).count('1') for i in str(N))
+
+def calculateComplexCost(N,M):
+  #i.e. the cost to turn a numberfrom N to M. 
+  m1 = map.map[int(N)]
+  m2 = map.map[int(M)]
+  n1 = bin(m1).count('1')
+  n2 = bin(m2).count('1')
+  sim = bin(m1&m2).count('1')
+  return (n1-sim) + (n2-sim)
+
+start = datetime.datetime.now()
+if len(sys.argv) > 1:
+  prime = int(sys.argv[1])
+  print 'The difference for', prime, 'is',
+  print calculateTransitionCost(prime)
+  end = datetime.datetime.now()
+  print end-start
+else:
+  print 'Calculating for all primes between 1e7 and 2e7'
+  infile = open('Primes2e7.txt')
+  i = 0
+  Sams = []
+  Maxs = []
+  Diffs = []
+  for line in infile:
+    prime = int(line.split()[0])
+    Sam, Max = calculateTransitionCost(prime)
+    Sams.append(Sam)
+    Maxs.append(Max)
+    Diffs.append(Sam-Max)
+  y = open('SamMax.txt','w')
+  for el in zip(Sams, Maxs, Diffs):
+    y.write(str(el)+'\n')
+  p.close()
+  end = datetime.datetime.now()
+  print end-start
